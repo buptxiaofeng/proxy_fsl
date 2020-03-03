@@ -1,6 +1,55 @@
 import torch.nn as nn
 import torch
 
+class SELayer(nn.Module):
+    def __init__(self, channels, reduction = 16):
+        super(SELayer, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+                nn.Linear(channels, channels // reduction, bias = False),
+                nn.ReLU(),
+                nn.Linear(channels // reduction, channels, bias = False),
+                nn.Sigmoid()
+                )
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        out = x * y.expand_as(x)
+
+        return out
+
+class Proxy(nn.Module):
+    def __init__(self, num_shot = 5):
+        super(Proxy, self).__init__()
+        self.pooling = nn.AdaptiveAvgPool3d((64, 5, 5))
+        self.layer = nn.Sequential(
+                nn.Linear(64 * 5 * 5, 32, bias = False),
+                nn.ReLU(),
+                nn.Linear(32, 1, bias = False),
+                nn.Sigmoid()
+                )
+
+    def forward(self, x):
+        out = None
+        for i in range(x.shape[0]):
+            new_x = x[i, ...]
+            tmp_x = x[i, ...]
+            tmp_x = self.pooling(tmp_x)
+            tmp_x = tmp_x.view(tmp_x.shape[0], -1)
+            tmp_x = self.layer(tmp_x)
+            tmp_x = tmp_x.squeeze(1)
+            shape = new_x.shape
+            new_x = torch.mm(tmp_x.unsqueeze(0), new_x.view(new_x.shape[0], -1))
+            new_x = new_x.reshape((1, 1, shape[-3], shape[-2], shape[-1]))
+            if out is None:
+                out = new_x
+            else:
+                out = torch.cat((out,new_x), dim = 0)
+
+        return out.squeeze(1)
+
 class Relation(nn.Module):
 
     def __init__(self, model_type, num_shot, num_way, num_query):
@@ -24,37 +73,19 @@ class Relation(nn.Module):
         else:
             raise ValueError('')
 
+        self.proxy = Proxy()
+        self.dropout = nn.Dropout(0.3)
+
         self.layer1 = nn.Sequential(
-                nn.Conv3d(2, 2, kernel_size = 3, padding = 0),
+                nn.Conv3d(2, 2, kernel_size = 3, padding = 1),
                 nn.BatchNorm3d(2),
                 nn.ReLU(),
-                nn.Conv3d(2, 1, kernel_size = 3, padding = 0),
-                nn.BatchNorm3d(1),
-                nn.ReLU()
-                #nn.Conv2d(self.input_channels, 64, kernel_size=3, padding=1),
-                #nn.BatchNorm2d(64),
-                #nn.ReLU(),
-                #nn.Conv2d(64, 64, kernel_size=3, padding=1),
-                #nn.BatchNorm2d(64),
-                #nn.ReLU(),
-                )
-
-        #self.center = nn.Sequential(
-        #        nn.Linear(5, 32),
-        #        nn.ReLU(),
-        #        nn.Linear(32, 32),
-        #        nn.ReLU(),
-        #        nn.Linear(32, 1),
-        #        nn.ReLU()
-        #        )
-        self.center = nn.Sequential(
-                nn.Conv3d(5, 5, kernel_size = 5, padding = 2),
+                nn.Conv3d(2, 1, kernel_size = 3, padding = 1),
                 nn.BatchNorm3d(1),
                 nn.ReLU(),
-                nn.Conv3d(5, 1, kernel_size = 3, padding = 1),
-                nn.BatchNorm3d(1),
-                nn.ReLU()
                 )
+
+        self.se = SELayer(64)
 
         #global average pooling
         self.layer2 = nn.AdaptiveAvgPool3d(1)
@@ -63,13 +94,17 @@ class Relation(nn.Module):
     def forward(self, support, query):
 
         support = self.encoder(support)
+        support = self.se(support)
+
         query = self.encoder(query)
+        query = self.se(query)
         query_out = query
 
         shape = support.shape
         support = support.reshape(self.num_shot, self.num_way, support.shape[1] , support.shape[2] , support.shape[3])
         support = torch.transpose(support, 0, 1)
         support_out = support
+
         #support  = self.center(support).squeeze()
 
         #support = support.reshape(self.num_shot, self.num_way, support.shape[1] * support.shape[2] * support.shape[3])
@@ -86,7 +121,9 @@ class Relation(nn.Module):
         #support = new_support
 
         #support = support.squeeze().reshape(self.num_way, shape[1], shape[2], shape[3])
-        support = torch.sum(support, dim = 1).squeeze()
+        support = self.proxy(support)
+        #support = torch.sum(support, dim = 1).squeeze()
+        #support = support[:,0,...]
         #support = torch.mean(support, dim = 1).squeeze()
         center = support
 
@@ -105,6 +142,5 @@ class Relation(nn.Module):
         out = self.layer1(feature)
         out = self.layer2(out)
         out = out.view(-1, self.num_way)
-        #out = self.softmax(-1 * out)
 
         return out, support_out, center
