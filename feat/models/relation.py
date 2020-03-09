@@ -21,11 +21,17 @@ class SELayer(nn.Module):
         return out
 
 class Proxy(nn.Module):
-    def __init__(self, num_shot = 5):
+    def __init__(self, num_shot = 5, input_dim = 32):
         super(Proxy, self).__init__()
-        self.pooling = nn.AdaptiveAvgPool3d((64, 5, 5))
+        self.pooling = nn.AdaptiveAvgPool3d((input_dim, 5, 5))
+        self.conv3d = nn.Sequential(
+                nn.Conv3d(num_shot, 1, kernel_size = 3, padding = 1),
+                nn.BatchNorm3d(1),
+                nn.ReLU()
+                )
+
         self.layer = nn.Sequential(
-                nn.Linear(64 * 5 * 5, 32, bias = False),
+                nn.Linear(input_dim * 2 * 5 * 5, 32, bias = False),
                 nn.ReLU(),
                 nn.Linear(32, 1, bias = False),
                 nn.Sigmoid()
@@ -33,11 +39,19 @@ class Proxy(nn.Module):
 
     def forward(self, x):
         out = None
+        #out_x = self.conv3d(x)
+        out_x = torch.sum(x, dim = 1)
+        out_x = out_x.squeeze(1)
+        out_x = self.pooling(out_x)
+        out_x = out_x.view(out_x.shape[0], -1)
         for i in range(x.shape[0]):
             new_x = x[i, ...]
             tmp_x = x[i, ...]
+            tmp_out = out_x[i, ...]
+            tmp_out = tmp_out.repeat(tmp_x.shape[0], 1)
             tmp_x = self.pooling(tmp_x)
             tmp_x = tmp_x.view(tmp_x.shape[0], -1)
+            tmp_x = torch.cat((tmp_x, tmp_out), dim = 1)
             tmp_x = self.layer(tmp_x)
             tmp_x = tmp_x.squeeze(1)
             shape = new_x.shape
@@ -66,15 +80,20 @@ class Relation(nn.Module):
             from feat.networks.convnet import ConvNet6
             self.encoder = ConvNet6()
             self.input_channels = 128
-        elif model_type == 'ResNet':
-            from feat.networks.resnet import ResNet
-            self.encoder = ResNet()
+        elif model_type == 'ResNet10':
+            from feat.networks.resnet import ResNet10
+            self.encoder = ResNet10()
             self.input_channels = 1280
+        elif model_type == "ResNet18":
+            from feat.network.resnet import ResNet18
+            self.encoder = ResNet18()
+        elif model_type == "ResNet34":
+            from feat.network.resnet import ResNet34
+            self.encoder = ResNet34()
         else:
             raise ValueError('')
 
-        self.proxy = Proxy()
-        self.dropout = nn.Dropout(0.3)
+        self.proxy = Proxy(num_shot = self.num_shot)
 
         self.layer1 = nn.Sequential(
                 nn.Conv3d(2, 2, kernel_size = 3, padding = 1),
