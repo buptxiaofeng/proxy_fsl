@@ -1,5 +1,4 @@
 import torch.nn as nn
-from feat.models.attention import SelfAttention
 import torch
 
 # Basic ConvNet with Pooling layer
