@@ -15,6 +15,7 @@ from tqdm import tqdm
 from loss import ContrastLoss, CenterLoss
 import math
 from torch.nn import init
+import wandb
 
 def get_learning_rate(optimizer):
     lr=[]
@@ -29,9 +30,9 @@ def weights_init(m):
     elif isinstance(m, nn.BatchNorm2d):
         m.weight.data.fill_(1)
         m.bias.data.zero_()
-    elif isinstance(m, nn.Linear):
-        m.weight.data.normal_(0, 0.01)
-        m.bias.data.zero_()
+    #elif isinstance(m, nn.Linear):
+    #    m.weight.data.normal_(0, 0.01)
+    #    m.bias.data.zero_()
 
 def train():
     json_file = open("parameters.json")
@@ -60,13 +61,13 @@ def train():
     relation = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"])
     #relation.apply(weights_init)
 
-    #optimizer = torch.optim.Adam(relation.parameters(), lr = parameters["adam_lr"])
     #optimizer = torch.optim.Adadelta(relation.parameters(), lr = parameters["adam_lr"])
     optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
-    #optimizer = torch.optim.ASGD(relation.parameters(), lr = parameters["sgd_lr"])
-    #scheduler = StepLR(optimizer, step_size=1000, gamma=0.5)
+    #scheduler = StepLR(optimizer, step_size=100, gamma=0.5)
     #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,50)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 50, factor = 0.5, min_lr = 0.001)
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 10, factor = 0.2)
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 20, factor = 0.2, min_lr = 0.0001)
     #mse = nn.MSELoss(reduction='sum').cuda()
     #ce = nn.NLLLoss().cuda()
     ce = nn.CrossEntropyLoss().cuda()
@@ -121,7 +122,7 @@ def train():
                 print("episode:", epoch * parameters["num_train"] + i+1,"ce loss", total_loss / 100, "contrast loss:", loss2.item())
                 train_accuracy = numpy.sum(total_rewards)/1.0/parameters["num_query"] / parameters["num_way"] / parameters["num_train"]
                 print('Train Accuracy of the model on the train :{:.2f} %'.format(100 * train_accuracy))
-            if (episode % 100 == 0 and episode > 50000) or episode % 1000 == 0:
+            if (episode % 100 == 0 and episode > 10000) or episode % 1000 == 0:
                 acc, _ = evaluation(parameters, relation, val_loader, mode="val")
                 if acc > max_acc:
                     test_acc, _, = evaluation(parameters, relation, test_loader, mode="test")
@@ -129,11 +130,9 @@ def train():
                 max_test_acc = max(test_acc, max_test_acc)
                 max_acc = max(max_acc, acc)
                 print("episode:", epoch * parameters["num_train"] + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
-            #if (epoch * parameters["num_train"] + i + 1) == 50000:
-            #    print("change to sgd")
-            #    optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
 
         scheduler.step(max_acc)
+        #scheduler.step()
         print("sgd learning rate:", get_learning_rate(optimizer))
 
 if __name__ == "__main__":
