@@ -12,7 +12,6 @@ from feat.models.relation import Relation
 from torch.optim.lr_scheduler import StepLR
 from evaluation import evaluation
 from tqdm import tqdm
-from loss import ContrastLoss, CenterLoss
 import math
 from torch.nn import init
 import wandb
@@ -22,17 +21,6 @@ def get_learning_rate(optimizer):
     for param_group in optimizer.param_groups:
           lr +=[ param_group['lr'] ]
     return lr
-
-def weights_init(m):
-    if isinstance(m, nn.Conv2d):
-        init.xavier_uniform_(m.weight.data)
-        init.constant_(m.bias.data, 0.1)
-    elif isinstance(m, nn.BatchNorm2d):
-        m.weight.data.fill_(1)
-        m.bias.data.zero_()
-    #elif isinstance(m, nn.Linear):
-    #    m.weight.data.normal_(0, 0.01)
-    #    m.bias.data.zero_()
 
 def train():
     json_file = open("parameters.json")
@@ -59,21 +47,11 @@ def train():
     test_loader = DataLoader(dataset=test_set, batch_sampler=test_sampler, num_workers=8, pin_memory=True)
 
     relation = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"])
-    #relation.apply(weights_init)
 
-    #optimizer = torch.optim.Adadelta(relation.parameters(), lr = parameters["adam_lr"])
     optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
-    #scheduler = StepLR(optimizer, step_size=100, gamma=0.5)
-    #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,50)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 50, factor = 0.5, min_lr = 0.001)
-    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 10, factor = 0.2)
     #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 20, factor = 0.2, min_lr = 0.0001)
-    #mse = nn.MSELoss(reduction='sum').cuda()
-    #ce = nn.NLLLoss().cuda()
     ce = nn.CrossEntropyLoss().cuda()
-    #center_loss = CenterLoss(num_classes = parameters["num_way"])
-    closs = CenterLoss()
-    #criterion = nn.CrossEntropyLoss().cuda()
     relation = torch.nn.DataParallel(relation, device_ids=range(torch.cuda.device_count())).cuda()
     cudnn.benchmark = True
 
@@ -96,18 +74,7 @@ def train():
             support, query = data[:p], data[p:]
             relation_score, support_feature, center  = relation(support, query)
 
-            #loss = criterion(relation_score, one_hot_label)
-            loss1 = ce(-1 * relation_score, label) 
-            #loss1 = mse(relation_score, one_hot_label) 
-            loss2 = closs(support_feature, center)
-            #loss2 = mmd2(support_feature, query_feature)
-            #tmp_label = torch.arange(parameters["num_way"]).repeat(parameters["num_shot"] + parameters["num_query"]).cuda()
-            #support_feature = support_feature.view(support_feature.shape[0], -1)
-            #query_feature = query_feature.view(query_feature.shape[0], -1)
-            #loss2 = center_loss(query_feature, label)
-            #loss2 = center_loss(torch.cat((support_feature, query_feature), dim = 0), tmp_label)
-            #loss = bce(relation_score, one_hot_label)
-            loss = loss1 
+            loss = ce(-1 * relation_score, label) 
             total_loss += loss.item()
             _, predict_label = torch.min(relation_score, 1)
             rewards = [1 if predict_label[j]==label[j] else 0 for j in range(label.shape[0])]
@@ -132,7 +99,6 @@ def train():
                 print("episode:", epoch * parameters["num_train"] + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
 
         scheduler.step(max_acc)
-        #scheduler.step()
         print("sgd learning rate:", get_learning_rate(optimizer))
 
 if __name__ == "__main__":
