@@ -72,7 +72,7 @@ def train():
             data, _ = [_.cuda() for _ in batch]
             p = parameters["num_shot"] * parameters["num_way"]
             support, query = data[:p], data[p:]
-            relation_score, support_feature, center  = relation(support, query)
+            relation_score = relation(support, query)
 
             loss = ce(-1 * relation_score, label) 
             total_loss += loss.item()
@@ -86,7 +86,7 @@ def train():
 
             episode = epoch * parameters["num_train"] + i + 1
             if episode % 100 == 0:
-                print("episode:", epoch * parameters["num_train"] + i+1,"ce loss", total_loss / 100, "contrast loss:", loss2.item())
+                print("episode:", epoch * parameters["num_train"] + i+1,"ce loss", total_loss / 100)
                 train_accuracy = numpy.sum(total_rewards)/1.0/parameters["num_query"] / parameters["num_way"] / parameters["num_train"]
                 print('Train Accuracy of the model on the train :{:.2f} %'.format(100 * train_accuracy))
             if (episode % 100 == 0 and episode > 10000) or episode % 1000 == 0:
