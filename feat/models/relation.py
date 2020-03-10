@@ -108,7 +108,6 @@ class Relation(nn.Module):
 
         #global average pooling
         self.layer2 = nn.AdaptiveAvgPool3d(1)
-        self.softmax = nn.Softmax(dim = 1)
 
     def forward(self, support, query):
 
@@ -117,40 +116,19 @@ class Relation(nn.Module):
 
         query = self.encoder(query)
         query = self.se(query)
-        query_out = query
 
         shape = support.shape
         support = support.reshape(self.num_shot, self.num_way, support.shape[1] , support.shape[2] , support.shape[3])
         support = torch.transpose(support, 0, 1)
-        support_out = support
 
-        #support  = self.center(support).squeeze()
-
-        #support = support.reshape(self.num_shot, self.num_way, support.shape[1] * support.shape[2] * support.shape[3])
-        #new_support = None
-        #for i in range(self.num_way):
-        #    sub_support = support[:, i, ...]
-        #    sub_support = torch.transpose(sub_support, 0, 1)
-        #    sub_support = self.center(sub_support).squeeze()
-        #    sub_support = sub_support.reshape(1, shape[1], shape[2], shape[3])
-        #    if new_support is None:
-        #        new_support = sub_support
-        #    else:
-        #        new_support = torch.cat((new_support, sub_support), dim = 0)
-        #support = new_support
-
-        #support = support.squeeze().reshape(self.num_way, shape[1], shape[2], shape[3])
         support = self.proxy(support)
         #support = torch.sum(support, dim = 1).squeeze()
-        #support = support[:,0,...]
         #support = torch.mean(support, dim = 1).squeeze()
-        center = support
 
         support = support.unsqueeze(0).repeat(self.num_query * self.num_way,1,1,1,1)
         query = query.unsqueeze(0).repeat(self.num_way, 1, 1, 1, 1)
         query = torch.transpose(query, 0, 1)
 
-        #feature = support * support
         support = support.reshape(-1, support.shape[2], support.shape[3], support.shape[4])
         query = query.reshape(-1, query.shape[2], query.shape[3], query.shape[4])
 
@@ -162,4 +140,4 @@ class Relation(nn.Module):
         out = self.layer2(out)
         out = out.view(-1, self.num_way)
 
-        return out, support_out, center
+        return out
