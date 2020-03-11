@@ -40,9 +40,6 @@ class ConsineProxy(nn.Module):
             tmp_x = self.pooling(tmp_x)
             tmp_x = tmp_x.view(tmp_x.shape[0], -1)
             tmp_x = self.consine(tmp_x, tmp_out)
-            #tmp_x = torch.cat((tmp_x, tmp_out), dim = 1)
-            #tmp_x = self.layer(tmp_x)
-            tmp_x = tmp_x.squeeze(1)
             shape = new_x.shape
             new_x = torch.mm(tmp_x.unsqueeze(0), new_x.view(new_x.shape[0], -1))
             new_x = new_x.reshape((1, 1, shape[-3], shape[-2], shape[-1]))
@@ -119,7 +116,8 @@ class Relation(nn.Module):
         else:
             raise ValueError('')
 
-        self.proxy = Proxy(num_shot = self.num_shot)
+        #self.proxy = Proxy(num_shot = self.num_shot)
+        self.proxy = ConsineProxy(num_shot = self.num_shot)
 
         self.layer1 = nn.Sequential(
                 nn.Conv3d(2, 2, kernel_size = 3, padding = 1),
