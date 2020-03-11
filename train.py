@@ -94,9 +94,7 @@ def train():
                 if acc > max_acc:
                     test_acc, _, = evaluation(parameters, relation, test_loader, mode="test")
                     torch.save(relation.state_dict(), "conv6_best.pth")
-                if test_acc > max_test_acc:
                     max_test_acc = test_acc
-                    max_acc = acc
                 print("episode:", epoch * parameters["num_train"] + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
 
         scheduler.step(max_acc)
