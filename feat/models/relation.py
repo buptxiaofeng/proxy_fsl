@@ -20,16 +20,43 @@ class SELayer(nn.Module):
 
         return out
 
+class ConsineProxy(nn.Module):
+    def __init__(self, num_shot = 5, input_dim = 32):
+        super(ConsineProxy, self).__init__()
+        self.pooling = nn.AdaptiveAvgPool3d((input_dim, 5, 5))
+        self.consine = nn.CosineSimilarity()
+
+    def forward(self, x):
+        out = None
+        out_x = torch.sum(x, dim = 1)
+        out_x = out_x.squeeze(1)
+        out_x = self.pooling(out_x)
+        out_x = out_x.view(out_x.shape[0], -1)
+        for i in range(x.shape[0]):
+            new_x = x[i, ...]
+            tmp_x = x[i, ...]
+            tmp_out = out_x[i, ...]
+            tmp_out = tmp_out.repeat(tmp_x.shape[0], 1)
+            tmp_x = self.pooling(tmp_x)
+            tmp_x = tmp_x.view(tmp_x.shape[0], -1)
+            tmp_x = self.consine(tmp_x, tmp_out)
+            #tmp_x = torch.cat((tmp_x, tmp_out), dim = 1)
+            #tmp_x = self.layer(tmp_x)
+            tmp_x = tmp_x.squeeze(1)
+            shape = new_x.shape
+            new_x = torch.mm(tmp_x.unsqueeze(0), new_x.view(new_x.shape[0], -1))
+            new_x = new_x.reshape((1, 1, shape[-3], shape[-2], shape[-1]))
+            if out is None:
+                out = new_x
+            else:
+                out = torch.cat((out,new_x), dim = 0)
+
+        return out.squeeze(1)
+
 class Proxy(nn.Module):
     def __init__(self, num_shot = 5, input_dim = 32):
         super(Proxy, self).__init__()
         self.pooling = nn.AdaptiveAvgPool3d((input_dim, 5, 5))
-        self.conv3d = nn.Sequential(
-                nn.Conv3d(num_shot, 1, kernel_size = 3, padding = 1),
-                nn.BatchNorm3d(1),
-                nn.ReLU()
-                )
-
         self.layer = nn.Sequential(
                 nn.Linear(input_dim * 2 * 5 * 5, 32, bias = False),
                 nn.ReLU(),
@@ -39,7 +66,6 @@ class Proxy(nn.Module):
 
     def forward(self, x):
         out = None
-        #out_x = self.conv3d(x)
         out_x = torch.sum(x, dim = 1)
         out_x = out_x.squeeze(1)
         out_x = self.pooling(out_x)
