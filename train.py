@@ -49,8 +49,8 @@ def train():
     relation = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"])
 
     optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 50, factor = 0.5, min_lr = 0.001)
-    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 20, factor = 0.2, min_lr = 0.0001)
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 50, factor = 0.5, min_lr = 0.001)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 20, factor = 0.2, min_lr = 0.0001)
     ce = nn.CrossEntropyLoss().cuda()
     relation = torch.nn.DataParallel(relation, device_ids=range(torch.cuda.device_count())).cuda()
     cudnn.benchmark = True
@@ -92,6 +92,7 @@ def train():
             if (episode % 100 == 0 and episode > 5000) or episode % 1000 == 0:
                 acc, _ = evaluation(parameters, relation, val_loader, mode="val")
                 if acc > max_acc:
+                    max_acc = acc
                     test_acc, _, = evaluation(parameters, relation, test_loader, mode="test")
                     torch.save(relation.state_dict(), "conv6_best.pth")
                     max_test_acc = test_acc
