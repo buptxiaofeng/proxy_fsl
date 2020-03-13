@@ -98,15 +98,15 @@ class Relation(nn.Module):
         if model_type == 'ConvNet4':
             from feat.networks.convnet import ConvNet4
             self.encoder = ConvNet4()
-            self.input_channels = 128
+            self.input_channels = 64
         elif model_type == 'ConvNet6':
             from feat.networks.convnet import ConvNet6
             self.encoder = ConvNet6()
-            self.input_channels = 128
+            self.input_channels = 64
         elif model_type == 'ResNet10':
             from feat.networks.resnet import ResNet10
             self.encoder = ResNet10()
-            self.input_channels = 1280
+            self.input_channels = 512
         elif model_type == "ResNet18":
             from feat.network.resnet import ResNet18
             self.encoder = ResNet18()
@@ -116,19 +116,19 @@ class Relation(nn.Module):
         else:
             raise ValueError('')
 
-        #self.proxy = Proxy(num_shot = self.num_shot)
-        self.proxy = ConsineProxy(num_shot = self.num_shot)
+        self.proxy = Proxy(num_shot = self.num_shot)
+        #self.proxy = ConsineProxy(num_shot = self.num_shot)
 
         self.layer1 = nn.Sequential(
-                nn.Conv3d(2, 2, kernel_size = 3, padding = 1),
-                nn.BatchNorm3d(2),
+                nn.Conv3d(2, 4, kernel_size = 3, padding = 1),
+                nn.BatchNorm3d(4),
                 nn.ReLU(),
-                nn.Conv3d(2, 1, kernel_size = 3, padding = 1),
+                nn.Conv3d(4, 1, kernel_size = 3, padding = 1),
                 nn.BatchNorm3d(1),
                 nn.ReLU(),
                 )
 
-        self.se = SELayer(64)
+        self.se = SELayer(self.input_channels)
 
         #global average pooling
         self.layer2 = nn.AdaptiveAvgPool3d(1)
