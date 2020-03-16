@@ -145,7 +145,11 @@ class Relation(nn.Module):
         support = support.reshape(self.num_shot, self.num_way, support.shape[1] , support.shape[2] , support.shape[3])
         support = torch.transpose(support, 0, 1)
 
-        support = self.proxy(support)
+        #for one shot
+        if support.shape[1] == 1:
+            support = support.squeeze(1)
+        else:
+            support = self.proxy(support)
         #support = torch.sum(support, dim = 1).squeeze()
         #support = torch.mean(support, dim = 1).squeeze()
 
