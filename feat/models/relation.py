@@ -26,7 +26,7 @@ class SumProxy(nn.Module):
     
     def forward(self, x):
 
-        return torch.sum(x, dim = self.dim).suqeeze()
+        return torch.sum(x, dim = self.dim, keepdim = False)
 
 class CosineProxy(nn.Module):
     def __init__(self, num_shot = 5, input_dim = 32):
