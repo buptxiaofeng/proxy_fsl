@@ -114,13 +114,15 @@ class Relation(nn.Module):
         elif model_type == 'ResNet10':
             from feat.networks.resnet import ResNet10
             self.encoder = ResNet10()
-            self.input_channels = 512
+            self.input_channels = 64
         elif model_type == "ResNet18":
             from feat.network.resnet import ResNet18
             self.encoder = ResNet18()
+            self.input_channels = 64
         elif model_type == "ResNet34":
             from feat.network.resnet import ResNet34
             self.encoder = ResNet34()
+            self.input_channels = 64
         else:
             raise ValueError('')
 
