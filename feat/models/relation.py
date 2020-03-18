@@ -130,8 +130,10 @@ class Relation(nn.Module):
             self.proxy = CosineProxy(num_shot = self.num_shot)
         elif proxy_type == "Sum":
             self.proxy = SumProxy(dim = 1)
-        else:
+        elif proxy_type == "Proxy":
             self.proxy = Proxy(num_shot = self.num_shot)
+        else:
+            raise ValueError("")
 
         self.layer1 = nn.Sequential(
                 nn.Conv3d(2, 4, kernel_size = 3, padding = 1),
