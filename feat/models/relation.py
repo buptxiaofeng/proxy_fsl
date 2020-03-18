@@ -128,7 +128,7 @@ class Relation(nn.Module):
 
         if proxy_type == "Cosine":
             self.proxy = CosineProxy(num_shot = self.num_shot)
-        elif proxy_type == "Sum"
+        elif proxy_type == "Sum":
             self.proxy = SumProxy(dim = 1)
         else:
             self.proxy = Proxy(num_shot = self.num_shot)
