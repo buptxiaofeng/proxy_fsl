@@ -46,7 +46,7 @@ def train():
     test_sampler = CategoriesSampler(test_set.label, n_batch = parameters["num_test"], n_cls = parameters["num_way"], n_per = parameters["num_shot"] + parameters["num_query"])
     test_loader = DataLoader(dataset=test_set, batch_sampler=test_sampler, num_workers=8, pin_memory=True)
 
-    relation = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"])
+    relation = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"]).cuda()
 
     optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 50, factor = 0.5, min_lr = 0.0001)
@@ -54,7 +54,6 @@ def train():
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 20, factor = 0.2, min_lr = 0.0001)
 
     ce = nn.CrossEntropyLoss().cuda()
-    relation = torch.nn.DataParallel(relation, device_ids=range(torch.cuda.device_count())).cuda()
     cudnn.benchmark = True
 
     label = torch.arange(parameters["num_way"]).repeat(parameters["num_query"])
