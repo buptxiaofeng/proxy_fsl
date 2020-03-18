@@ -3,13 +3,15 @@
 	"dataset":"MiniImageNet",
 	"num_epochs":500,
 	"batch_size":1,
-	"adam_lr": 0.1,
 	"sgd_lr": 0.1,
 
 	"num_way":5,
 	"num_shot":5,
-	"num_query":10,
+	"num_query":16,
 	"num_train":100,
 	"num_val":600,
-	"num_test":600
+	"num_test":600,
+
+	"proxy_type":"Cosine",
+	"classifier":"3DConv"
 }
