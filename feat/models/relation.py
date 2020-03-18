@@ -19,10 +19,18 @@ class SELayer(nn.Module):
         out = x * y.expand_as(x)
 
         return out
+class SumProxy(nn.Module):
+    def __init__(self, dim = 1):
+        super(SumProxy, self).__init__()
+        self.dim = 1
+    
+    def forward(x):
 
-class ConsineProxy(nn.Module):
+        return torch.sum(x, dim = self.dim).suqeeze()
+
+class CosineProxy(nn.Module):
     def __init__(self, num_shot = 5, input_dim = 32):
-        super(ConsineProxy, self).__init__()
+        super(CosineProxy, self).__init__()
         self.pooling = nn.AdaptiveAvgPool3d((input_dim, 5, 5))
         self.consine = nn.CosineSimilarity()
 
@@ -89,7 +97,7 @@ class Proxy(nn.Module):
 
 class Relation(nn.Module):
 
-    def __init__(self, model_type, num_shot, num_way, num_query):
+    def __init__(self, model_type, num_shot, num_way, num_query, proxy_type, classifier):
         super(Relation, self).__init__()
         self.num_shot = num_shot
         self.num_way = num_way
@@ -116,8 +124,12 @@ class Relation(nn.Module):
         else:
             raise ValueError('')
 
-        self.proxy = Proxy(num_shot = self.num_shot)
-        #self.proxy = ConsineProxy(num_shot = self.num_shot)
+        if proxy_type == "Cosine":
+            self.proxy = CosineProxy(num_shot = self.num_shot)
+        elif proxy_type == "Sum"
+            self.proxy = SumProxy(dim = 1)
+        else:
+            self.proxy = Proxy(num_shot = self.num_shot)
 
         self.layer1 = nn.Sequential(
                 nn.Conv3d(2, 4, kernel_size = 3, padding = 1),
@@ -150,8 +162,6 @@ class Relation(nn.Module):
             support = support.squeeze(1)
         else:
             support = self.proxy(support)
-        #support = torch.sum(support, dim = 1).squeeze()
-        #support = torch.mean(support, dim = 1).squeeze()
 
         support = support.unsqueeze(0).repeat(self.num_query * self.num_way,1,1,1,1)
         query = query.unsqueeze(0).repeat(self.num_way, 1, 1, 1, 1)
