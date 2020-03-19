@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+from feat.utils import euclidean_metric
 
 class SELayer(nn.Module):
     def __init__(self, channels, reduction = 16):
@@ -19,6 +20,7 @@ class SELayer(nn.Module):
         out = x * y.expand_as(x)
 
         return out
+
 class SumProxy(nn.Module):
     def __init__(self, dim = 1):
         super(SumProxy, self).__init__()
@@ -27,6 +29,64 @@ class SumProxy(nn.Module):
     def forward(self, x):
 
         return torch.sum(x, dim = self.dim).suqeeze()
+
+class ConvClassifier(nn.Module):    
+    def __init__(self):
+        super(ConvClassifier, self).__init__()
+        self.layer1 = nn.Sequential(
+                nn.Conv3d(2, 4, kernel_size = 3, padding = 1),
+                nn.BatchNorm3d(4),
+                nn.ReLU(),
+                nn.Conv3d(4, 1, kernel_size = 3, padding = 1),
+                nn.BatchNorm3d(1),
+                nn.ReLU(),
+                )
+        self.layer2 = nn.AdaptiveAvgPool3d(1)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+
+        return x
+
+class FCClassifier(nn.Module):
+    def __init__(self):
+        super(FCClassifier, self).__init__()
+        self.layer1 = nn.Sequential(
+                nn.Conv2d(64 * 2, 64, kernel_size = 3, padding = 0)
+                nn.BatchNorm2d(64, momentum=1, affine=True),
+                nn.ReLU(),
+                nn.MaxPool2d(2))
+
+        self.layer2 = nn.Sequential(
+                nn.Conv2d(64,64,kernel_size=3,padding=0),
+                nn.BatchNorm2d(64, momentum=1, affine=True),
+                nn.ReLU(),
+                nn.MaxPool2d(2))
+
+        self.fc1 = nn.Linear(input_size*3*3,hidden_size)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size,1)
+    
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = out.view(out.size(0),-1)
+        out = self.relu(self.fc1(out))
+        out = self.fc2(out)
+        #out = torch.sigmoid(out)
+
+        return out
+
+class EuclideanDistance(nn.Module):
+    def __init__(self):
+        super(EuclideanDistance, self).__init__()
+
+    def forward(self, x):
+        proto = self.encoder(data_shot)
+    ¦   proto = proto.reshape(self.args.shot, self.args.way, -1).mean(dim=0)
+    ¦   logits = euclidean_metric(self.encoder(data_query), proto) / self.args.temperature
+    ¦   return logits
 
 class CosineProxy(nn.Module):
     def __init__(self, num_shot = 5, input_dim = 32):
