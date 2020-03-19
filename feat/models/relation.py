@@ -53,7 +53,7 @@ class FCClassifier(nn.Module):
     def __init__(self):
         super(FCClassifier, self).__init__()
         self.layer1 = nn.Sequential(
-                nn.Conv2d(64 * 2, 64, kernel_size = 3, padding = 0)
+                nn.Conv2d(64 * 2, 64, kernel_size = 3, padding = 0),
                 nn.BatchNorm2d(64, momentum=1, affine=True),
                 nn.ReLU(),
                 nn.MaxPool2d(2))
@@ -84,9 +84,9 @@ class EuclideanDistance(nn.Module):
 
     def forward(self, x):
         proto = self.encoder(data_shot)
-    ¦   proto = proto.reshape(self.args.shot, self.args.way, -1).mean(dim=0)
-    ¦   logits = euclidean_metric(self.encoder(data_query), proto) / self.args.temperature
-    ¦   return logits
+        proto = proto.reshape(self.args.shot, self.args.way, -1).mean(dim=0)
+        logits = euclidean_metric(self.encoder(data_query), proto) / self.args.temperature
+        return logits
 
 class CosineProxy(nn.Module):
     def __init__(self, num_shot = 5, input_dim = 32):
