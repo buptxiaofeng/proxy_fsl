@@ -15,6 +15,7 @@ from tqdm import tqdm
 import math
 from torch.nn import init
 import wandb
+import os
 
 def get_learning_rate(optimizer):
     lr=[]
@@ -26,6 +27,7 @@ def train():
     json_file = open("parameters.json")
     parameters = json.load(json_file)
     json_file.close()
+    os.environ["CUDA_VISIBLE_DEVICES"] = parameters["gpu_id"]
 
     train_set = None
     val_set = None
