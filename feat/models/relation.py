@@ -24,7 +24,7 @@ class SumProxy(nn.Module):
         super(SumProxy, self).__init__()
         self.dim = 1
     
-    def forward(x):
+    def forward(self, x):
 
         return torch.sum(x, dim = self.dim).suqeeze()
 
