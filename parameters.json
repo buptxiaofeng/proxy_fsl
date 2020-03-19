@@ -13,5 +13,6 @@
 	"num_test":600,
 
 	"proxy_type":"Cosine",
-	"classifier":"3DConv"
+	"classifier":"3DConv",
+	"gpu_id":"0"
 }
