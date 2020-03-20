@@ -195,19 +195,8 @@ class Relation(nn.Module):
         else:
             raise ValueError("")
 
-        self.layer1 = nn.Sequential(
-                nn.Conv3d(2, 4, kernel_size = 3, padding = 1),
-                nn.BatchNorm3d(4),
-                nn.ReLU(),
-                nn.Conv3d(4, 1, kernel_size = 3, padding = 1),
-                nn.BatchNorm3d(1),
-                nn.ReLU(),
-                )
-
+        self.classifier = ConvClassifier()
         self.se = SELayer(self.input_channels)
-
-        #global average pooling
-        self.layer2 = nn.AdaptiveAvgPool3d(1)
 
     def forward(self, support, query):
 
@@ -238,8 +227,7 @@ class Relation(nn.Module):
         query = query.unsqueeze(1)
 
         feature = torch.cat((support, query), 1)
-        out = self.layer1(feature)
-        out = self.layer2(out)
+        out = self.classifier(feature)
         out = out.view(-1, self.num_way)
 
         return out
