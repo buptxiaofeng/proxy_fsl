@@ -91,7 +91,10 @@ def train():
                 print("episode:", epoch * parameters["num_train"] + i+1,"ce loss", total_loss / 100)
                 train_accuracy = numpy.sum(total_rewards)/1.0/parameters["num_query"] / parameters["num_way"] / parameters["num_train"]
                 print('Train Accuracy of the model on the train :{:.2f} %'.format(100 * train_accuracy))
-            if (episode % 100 == 0 and episode > 5000) or episode % 1000 == 0:
+            threshold = 50000
+            if parameters["dataset"] == "CUB":
+                threshold = 5000
+            if (episode % 100 == 0 and episode > threshold) or episode % 1000 == 0:
                 acc, _ = evaluation(parameters, relation, val_loader, mode="val")
                 if acc > max_acc:
                     max_acc = acc
