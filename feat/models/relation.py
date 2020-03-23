@@ -21,6 +21,15 @@ class SELayer(nn.Module):
 
         return out
 
+class MeanProxy(nn.Module):
+    def __init__(self, dim = 1):
+        super(MeanProxy, self).__init__()
+        self.dim = 1
+
+    def forward(self, x):
+
+        return torch.mean(x, dim = self.dim, keepdim = False)
+
 class SumProxy(nn.Module):
     def __init__(self, dim = 1):
         super(SumProxy, self).__init__()
@@ -50,7 +59,7 @@ class ConvClassifier(nn.Module):
         return x
 
 class FCClassifier(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size = 64, hidden_size = 8):
         super(FCClassifier, self).__init__()
         self.layer1 = nn.Sequential(
                 nn.Conv2d(64 * 2, 64, kernel_size = 3, padding = 0),
@@ -59,12 +68,12 @@ class FCClassifier(nn.Module):
                 nn.MaxPool2d(2))
 
         self.layer2 = nn.Sequential(
-                nn.Conv2d(64,64,kernel_size=3,padding=0),
+                nn.Conv2d(64, 64,kernel_size=3,padding=0),
                 nn.BatchNorm2d(64, momentum=1, affine=True),
                 nn.ReLU(),
                 nn.MaxPool2d(2))
 
-        self.fc1 = nn.Linear(input_size*3*3,hidden_size)
+        self.fc1 = nn.Linear(input_size*3*3, hidden_size)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(hidden_size,1)
     
@@ -74,18 +83,17 @@ class FCClassifier(nn.Module):
         out = out.view(out.size(0),-1)
         out = self.relu(self.fc1(out))
         out = self.fc2(out)
-        #out = torch.sigmoid(out)
 
         return out
 
-class EuclideanDistance(nn.Module):
+class EuclideanClassifier(nn.Module):
     def __init__(self):
-        super(EuclideanDistance, self).__init__()
+        super(EuclideanClassifier, self).__init__()
 
-    def forward(self, x):
-        proto = self.encoder(data_shot)
-        proto = proto.reshape(self.args.shot, self.args.way, -1).mean(dim=0)
-        logits = euclidean_metric(self.encoder(data_query), proto) / self.args.temperature
+    def forward(self, support, query):
+
+        logits = ((support.view(support.shape[0], -1) - query.view(query.shape[0], -1)) ** 2).sum(dim = 1)
+
         return logits
 
 class CosineProxy(nn.Module):
@@ -119,15 +127,18 @@ class CosineProxy(nn.Module):
         return out.squeeze(1)
 
 class Proxy(nn.Module):
-    def __init__(self, num_shot = 5, input_dim = 32):
+    def __init__(self, num_shot = 5, input_dim = 32, is_softmax = False):
         super(Proxy, self).__init__()
+        self.is_softmax = is_softmax
         self.pooling = nn.AdaptiveAvgPool3d((input_dim, 5, 5))
+        self.num_shot = num_shot
         self.layer = nn.Sequential(
                 nn.Linear(input_dim * 2 * 5 * 5, 32, bias = False),
                 nn.ReLU(),
                 nn.Linear(32, 1, bias = False),
                 nn.Sigmoid()
                 )
+        self.softmax = nn.Softmax(dim = 0)
 
     def forward(self, x):
         out = None
@@ -144,6 +155,8 @@ class Proxy(nn.Module):
             tmp_x = tmp_x.view(tmp_x.shape[0], -1)
             tmp_x = torch.cat((tmp_x, tmp_out), dim = 1)
             tmp_x = self.layer(tmp_x)
+            if self.is_softmax:
+                tmp_x = self.softmax(tmp_x)
             tmp_x = tmp_x.squeeze(1)
             shape = new_x.shape
             new_x = torch.mm(tmp_x.unsqueeze(0), new_x.view(new_x.shape[0], -1))
@@ -165,7 +178,10 @@ class Relation(nn.Module):
         self.model_type = model_type
         if model_type == 'ConvNet4':
             from feat.networks.convnet import ConvNet4
-            self.encoder = ConvNet4()
+            if classifier == "Euclidean":
+                self.encoder = ConvNet4(pooling = True)
+            else:
+                self.encoder = ConvNet4(pooling = False)
             self.input_channels = 64
         elif model_type == 'ConvNet6':
             from feat.networks.convnet import ConvNet6
@@ -174,15 +190,15 @@ class Relation(nn.Module):
         elif model_type == 'ResNet10':
             from feat.networks.resnet import ResNet10
             self.encoder = ResNet10()
-            self.input_channels = 64
+            self.input_channels = 512
         elif model_type == "ResNet18":
-            from feat.network.resnet import ResNet18
+            from feat.networks.resnet import ResNet18
             self.encoder = ResNet18()
-            self.input_channels = 64
+            self.input_channels = 512
         elif model_type == "ResNet34":
-            from feat.network.resnet import ResNet34
+            from feat.networks.resnet import ResNet34
             self.encoder = ResNet34()
-            self.input_channels = 64
+            self.input_channels = 512
         else:
             raise ValueError('')
 
@@ -190,12 +206,21 @@ class Relation(nn.Module):
             self.proxy = CosineProxy(num_shot = self.num_shot)
         elif proxy_type == "Sum":
             self.proxy = SumProxy(dim = 1)
+        elif proxy_type == "Mean":
+            self.proxy = MeanProxy(dim = 1)
         elif proxy_type == "Proxy":
             self.proxy = Proxy(num_shot = self.num_shot)
         else:
             raise ValueError("")
 
-        self.classifier = ConvClassifier()
+        if classifier == "3DConv":
+            self.classifier = ConvClassifier()
+        elif classifier == "FC":
+            self.classifier = FCClassifier()
+        elif classifier == "Euclidean":
+            self.classifier = EuclideanClassifier()
+        else:
+            raise ("Classifier value error")
         self.se = SELayer(self.input_channels)
 
     def forward(self, support, query):
@@ -223,10 +248,20 @@ class Relation(nn.Module):
         support = support.reshape(-1, support.shape[2], support.shape[3], support.shape[4])
         query = query.reshape(-1, query.shape[2], query.shape[3], query.shape[4])
 
-        support = support.unsqueeze(1)
-        query = query.unsqueeze(1)
+        feature = None
+        if isinstance(self.classifier, ConvClassifier):
+            support = support.unsqueeze(1)
+            query = query.unsqueeze(1)
+            feature = torch.cat((support, query), 1)
+        elif isinstance(self.classifier, FCClassifier):
+            feature = torch.cat((support, query), 1)
+        elif isinstance(self.classifier, EuclideanClassifier):
+            out = self.classifier(support, query)
+            out = out.view(-1, self.num_way)
+            return out
+        else:
+            raise ("Classifier value error!")
 
-        feature = torch.cat((support, query), 1)
         out = self.classifier(feature)
         out = out.view(-1, self.num_way)
 
