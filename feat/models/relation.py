@@ -86,6 +86,15 @@ class FCClassifier(nn.Module):
 
         return out
 
+class CosineClassifier(nn.Module):
+    def __init__(self):
+        super(CosineClassifier, self).__init__()
+        self.cosine = nn.CosineSimilarity()
+
+    def forward(self, support, query):
+
+        return self.cosine(support, query) * 2
+
 class EuclideanClassifier(nn.Module):
     def __init__(self):
         super(EuclideanClassifier, self).__init__()
@@ -100,7 +109,7 @@ class CosineProxy(nn.Module):
     def __init__(self, num_shot = 5, input_dim = 32):
         super(CosineProxy, self).__init__()
         self.pooling = nn.AdaptiveAvgPool3d((input_dim, 5, 5))
-        self.consine = nn.CosineSimilarity()
+        self.cosine = nn.CosineSimilarity()
 
     def forward(self, x):
         out = None
@@ -115,7 +124,7 @@ class CosineProxy(nn.Module):
             tmp_out = tmp_out.repeat(tmp_x.shape[0], 1)
             tmp_x = self.pooling(tmp_x)
             tmp_x = tmp_x.view(tmp_x.shape[0], -1)
-            tmp_x = self.consine(tmp_x, tmp_out)
+            tmp_x = self.cosine(tmp_x, tmp_out)
             shape = new_x.shape
             new_x = torch.mm(tmp_x.unsqueeze(0), new_x.view(new_x.shape[0], -1))
             new_x = new_x.reshape((1, 1, shape[-3], shape[-2], shape[-1]))
