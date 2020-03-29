@@ -208,8 +208,10 @@ class Relation(nn.Module):
             self.proxy = SumProxy(dim = 1)
         elif proxy_type == "Mean":
             self.proxy = MeanProxy(dim = 1)
-        elif proxy_type == "Proxy":
-            self.proxy = Proxy(num_shot = self.num_shot)
+        elif proxy_type == "Proxy" and classifier == "Euclidean":
+            self.proxy = Proxy(num_shot = self.num_shot, is_softmax = True)
+        elif proxy_type == "Proxy" and classifier != "Euclidean":
+            self.proxy = Proxy(num_shot = self.num_shot, is_softmax = False)
         else:
             raise ValueError("")
 
