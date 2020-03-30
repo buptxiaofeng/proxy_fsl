@@ -80,7 +80,7 @@ class ResNet(nn.Module):
         indim = 8
         for i in range(4):
             for j in range(list_of_num_layers[i]):
-                half_res = (i>=4) and (j==0)
+                half_res = (i>=2) and (j==0)
                 B = block(indim, list_of_out_dims[i], half_res)
                 trunk.append(B)
                 indim = list_of_out_dims[i]
@@ -93,13 +93,10 @@ class ResNet(nn.Module):
         return out
 
 def ResNet10(flatten = False):
-    #return ResNet(SimpleBlock, [1,1,1,1], [64, 128, 256, 512], flatten)
-    return ResNet(SimpleBlock, [1,1,1,1], [8, 16, 32, 64], flatten)
+    return ResNet(SimpleBlock, [1,1,1,1], [64, 128, 256, 512], flatten)
 
 def ResNet18(flatten = False):
-    #return ResNet(SimpleBlock, [2,2,2,2],[64,128,256,512], flatten)
-    return ResNet(SimpleBlock, [2,2,2,2], [8, 16, 32, 64], flatten)
+    return ResNet(SimpleBlock, [2,2,2,2],[64,128,256,512], flatten)
 
 def ResNet34(flatten = False):
-    #return ResNet(SimpleBlock, [3,4,6,3],[64,128,256,512], flatten)
-    return ResNet(SimpleBlock, [3,4,6,3], [8, 16, 32, 64], flatten)
+    return ResNet(SimpleBlock, [3,4,6,3],[64,128,256,512], flatten)
