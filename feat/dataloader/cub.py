@@ -5,6 +5,7 @@ from PIL import Image
 import numpy as np
 from torch.utils.data import Dataset
 from torchvision import transforms
+from feat.dataloader.additional_transforms import ImageJitter
 
 THIS_PATH = osp.dirname(__file__)
 ROOT_PATH = osp.abspath(osp.join(THIS_PATH, '..', '..'))
@@ -16,7 +17,7 @@ SPLIT_PATH = osp.join(ROOT_PATH, 'data/cub/split')
 # The concept labels are based on the attribute value, which are for further use (and not used in this work)
 class CUB(Dataset):
 
-    def __init__(self, setname, model_type):
+    def __init__(self, setname, image_size = 84, if_augmentation = False):
         txt_path = osp.join(SPLIT_PATH, setname + '.csv')
         lines = [x.strip() for x in open(txt_path, 'r').readlines()][1:]
 
@@ -25,13 +26,21 @@ class CUB(Dataset):
         lb = -1
         self.wnids = []
 
-        image_size = 84
-        self.transform = transforms.Compose([
-            transforms.Resize(92),
-            transforms.CenterCrop(image_size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        if setname =="train" and if_augmentation:
+            self.transform = transforms.Compose([
+                transforms.RandomResizedCrop((image_size, image_size)),
+                ImageJitter(dict(Brightness=0.4, Contrast=0.4, Color=0.4)),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+        else:
+            self.transform = transforms.Compose([
+                transforms.Resize(int(image_size * 1.15)),
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
 
         data_dict = {}
 
@@ -46,7 +55,7 @@ class CUB(Dataset):
                 
             data.append(path)
             image = Image.open(path).convert("RGB")
-            data_dict[path] = self.transform(image)
+            data_dict[path] = np.array(image)
             image.close()
             label.append(lb)
 
@@ -60,7 +69,9 @@ class CUB(Dataset):
 
     def __getitem__(self, i):
         path, label = self.data[i], self.label[i]
-        #image = self.transform(Image.open(path).convert('RGB'))
-        image = self.data_dict[path]
+        tmp_image = Image.fromarray(self.data_dict[path])
+        image = self.transform(tmp_image)
+        tmp_image.close()
+
         return image, label            
 
