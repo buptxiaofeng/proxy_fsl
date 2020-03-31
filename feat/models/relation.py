@@ -92,8 +92,11 @@ class CosineClassifier(nn.Module):
         self.cosine = nn.CosineSimilarity()
 
     def forward(self, support, query):
+        support = support.view(support.shape[0], -1)
+        query = query.view(query.shape[0], -1)
+        out = self.cosine(support, query)
 
-        return self.cosine(support, query) * 2
+        return out
 
 class EuclideanClassifier(nn.Module):
     def __init__(self):
@@ -101,7 +104,10 @@ class EuclideanClassifier(nn.Module):
 
     def forward(self, support, query):
 
-        logits = ((support.view(support.shape[0], -1) - query.view(query.shape[0], -1)) ** 2).sum(dim = 1)
+        support = support.view(support.shape[0], -1)
+        query = query.view(query.shape[0], -1)
+
+        logits = torch.pow(support - query, 2).sum(dim = 1)
 
         return logits
 
@@ -187,7 +193,7 @@ class Relation(nn.Module):
         self.model_type = model_type
         if model_type == 'ConvNet4':
             from feat.networks.convnet import ConvNet4
-            if classifier == "Euclidean":
+            if classifier == "Euclidean" or classifier == "Cosine":
                 self.encoder = ConvNet4(pooling = True)
             else:
                 self.encoder = ConvNet4(pooling = False)
@@ -199,15 +205,15 @@ class Relation(nn.Module):
         elif model_type == 'ResNet10':
             from feat.networks.resnet import ResNet10
             self.encoder = ResNet10()
-            self.input_channels = 64
+            self.input_channels = 512
         elif model_type == "ResNet18":
             from feat.networks.resnet import ResNet18
             self.encoder = ResNet18()
-            self.input_channels = 64
+            self.input_channels = 512
         elif model_type == "ResNet34":
             from feat.networks.resnet import ResNet34
             self.encoder = ResNet34()
-            self.input_channels = 64
+            self.input_channels = 512
         else:
             raise ValueError('')
 
@@ -217,7 +223,7 @@ class Relation(nn.Module):
             self.proxy = SumProxy(dim = 1)
         elif proxy_type == "Mean":
             self.proxy = MeanProxy(dim = 1)
-        elif proxy_type == "Proxy" and classifier == "Euclidean":
+        elif proxy_type == "Proxy" and classifier == "Euclidean": 
             self.proxy = Proxy(num_shot = self.num_shot, is_softmax = True)
         elif proxy_type == "Proxy" and classifier != "Euclidean":
             self.proxy = Proxy(num_shot = self.num_shot, is_softmax = False)
@@ -230,12 +236,13 @@ class Relation(nn.Module):
             self.classifier = FCClassifier()
         elif classifier == "Euclidean":
             self.classifier = EuclideanClassifier()
+        elif classifier == "Cosine":
+            self.classifier = CosineClassifier()
         else:
             raise ("Classifier value error")
         self.se = SELayer(self.input_channels)
 
     def forward(self, support, query):
-
         support = self.encoder(support)
         support = self.se(support)
 
@@ -267,6 +274,10 @@ class Relation(nn.Module):
         elif isinstance(self.classifier, FCClassifier):
             feature = torch.cat((support, query), 1)
         elif isinstance(self.classifier, EuclideanClassifier):
+            out = self.classifier(support, query)
+            out = out.view(-1, self.num_way)
+            return out
+        elif isinstance(self.classifier, CosineClassifier):
             out = self.classifier(support, query)
             out = out.view(-1, self.num_way)
             return out
