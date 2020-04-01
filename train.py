@@ -23,6 +23,15 @@ def get_learning_rate(optimizer):
           lr +=[ param_group['lr'] ]
     return lr
 
+def init_layer(L):
+    # Initialization using fan-in
+    if isinstance(L, nn.Conv2d):
+        n = L.kernel_size[0]*L.kernel_size[1]*L.out_channels
+        L.weight.data.normal_(0,math.sqrt(2.0/float(n)))
+    elif isinstance(L, nn.BatchNorm2d):
+        L.weight.data.fill_(1)
+        L.bias.data.fill_(0)
+
 def train():
     json_file = open("parameters.json")
     parameters = json.load(json_file)
@@ -32,14 +41,19 @@ def train():
     train_set = None
     val_set = None
     test_set = None
+    image_size = 84
+    if "ResNet" in parameters["model_type"]:
+        image_size = 224
     if parameters["dataset"] == "CUB":
-        train_set = CUB(setname = "train", model_type = parameters["model_type"])
-        val_set = CUB(setname = 'val', model_type = parameters["model_type"])
-        test_set = CUB(setname = 'test', model_type = parameters["model_type"])
+        train_set = CUB(setname = "train", image_size = image_size, if_augmentation = json.loads(parameters["if_augmentation"].lower()))
+        val_set = CUB(setname = 'val', image_size = image_size)
+        test_set = CUB(setname = 'test', image_size = image_size)
+    elif parameters["dataset"] == "MiniImageNet":
+        train_set = MiniImageNet(setname = "train", image_size = image_size, if_agumentation = json.loads(parameters["if_augmentation"].lower()))
+        val_set = MiniImageNet(setname = 'val', image_size = image_size)
+        test_set = MiniImageNet(setname = 'test', image_size = image_size)
     else:
-        train_set = MiniImageNet(setname = "train", model_type = parameters["model_type"])
-        val_set = MiniImageNet(setname = 'val', model_type = parameters["model_type"])
-        test_set = MiniImageNet(setname = 'test', model_type = parameters["model_type"])
+        raise("dataset parameter value error!")
 
     train_sampler = CategoriesSampler(train_set.label, n_batch = parameters["num_train"], n_cls = parameters["num_way"], n_per = parameters["num_shot"] + parameters["num_query"])
     train_loader = DataLoader(dataset=train_set, batch_sampler = train_sampler, num_workers= 8, pin_memory = True)
@@ -49,6 +63,7 @@ def train():
     test_loader = DataLoader(dataset=test_set, batch_sampler=test_sampler, num_workers=8, pin_memory=True)
 
     relation = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"]).cuda()
+    #relation.apply(init_layer)
 
     optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 50, factor = 0.5, min_lr = 0.0001)
@@ -65,11 +80,10 @@ def train():
     max_acc = 0
     max_test_acc = 0
     train_accuracy = 0
-    #relation.load_state_dict(torch.load("conv6_best.pth"))
     for epoch in range(parameters["num_epochs"]):
         total_rewards = 0
         total_loss = 0
-        for i, batch in enumerate(train_loader,1):
+        for i, batch in enumerate(train_loader, 1):
             relation.train()
             data, _ = [_.cuda() for _ in batch]
             p = parameters["num_shot"] * parameters["num_way"]
@@ -88,19 +102,18 @@ def train():
 
             episode = epoch * parameters["num_train"] + i + 1
             if episode % 100 == 0:
-                print("episode:", epoch * parameters["num_train"] + i+1,"ce loss", total_loss / 100)
+                print("episode:", epoch * parameters["num_train"] + i+1,"ce loss", total_loss / float(i + 1))
                 train_accuracy = numpy.sum(total_rewards)/1.0/parameters["num_query"] / parameters["num_way"] / parameters["num_train"]
                 print('Train Accuracy of the model on the train :{:.2f} %'.format(100 * train_accuracy))
             threshold = 50000
             if parameters["dataset"] == "CUB":
-                threshold = 5000
+                threshold = 10000
             if (episode % 100 == 0 and episode > threshold) or episode % 1000 == 0:
                 acc, _ = evaluation(parameters, relation, val_loader, mode="val")
                 if acc > max_acc:
                     max_acc = acc
                     test_acc, _, = evaluation(parameters, relation, test_loader, mode="test")
                     max_test_acc = test_acc
-                    #torch.save(relation.state_dict(), "conv6_best.pth")
                 print("episode:", epoch * parameters["num_train"] + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
 
         scheduler.step(max_acc)
