@@ -51,7 +51,7 @@ class MiniImageNet(Dataset):
                 lb += 1
             data.append(path)
             image = Image.open(path).convert("RGB")
-            data_dict[path] = self.transform(image)
+            data_dict[path] = np.array(image)
             image.close()
             label.append(lb)
 
@@ -65,8 +65,9 @@ class MiniImageNet(Dataset):
 
     def __getitem__(self, i):
         path, label = self.data[i], self.label[i]
-        #image = Image.open(path).convert("RGB")
-        #image = self.transform(image)
-        image = self.data_dict[path]
+        tmp_image = Image.fromarray(self.data_dict[path])
+        image = self.transform(tmp_image)
+        tmp_image.close()
+
         return image, label
 
