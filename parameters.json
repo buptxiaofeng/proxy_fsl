@@ -1,7 +1,8 @@
 {
-	"model_type":"ConvNet4",
-	"dataset":"MiniImageNet",
-	"num_epochs":500,
+	"model_type":"ResNet18",
+	"dataset":"CUB",
+        "if_augmentation":"True",
+	"num_epochs":600,
 	"batch_size":1,
 	"sgd_lr": 0.1,
 
@@ -12,7 +13,7 @@
 	"num_val":600,
 	"num_test":600,
 
-	"proxy_type":"Cosine",
+	"proxy_type":"Proxy",
 	"classifier":"3DConv",
 	"gpu_id":"0"
 }
