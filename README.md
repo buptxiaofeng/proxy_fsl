@@ -1,5 +1,22 @@
 # proxynet_fsl
 
+|parameter        |          |             |             |             |             |
+|:---------------:|:--------:|:-----------:|:-----------:|:-----------:|:-----------:|
+|model_type       |ConvNet4  |ConvNet6     |   ResNet10  |   ResNet18  |   ResNet34  |
+|dataset          |CUB       |MiniImageNet |             |             |             |
+|if_augmentation  |True      |False        |             |             |             |
+|num_epochs       |          |             |             |             |             |
+|batch_size       |1         |             |             |             |             |
+|sgd_lr           |0.1       |             |             |             |             |
+|num_way          |5         |             |             |             |             |
+|num_shot         |5         |1            |             |             |             |
+|num_query        |16        |             |             |             |             |
+|num_train        |100       |             |             |             |             |
+|num_val          |100       |             |             |             |             |
+|num_test         |600       |             |             |             |             |
+|proxy_type       |Proxy     |Mean         |     Sum     |             |             |
+|Classifier       |3DConv    |FC           |  Euclidean  |             |             |
+
 Table:The performance of ProxyNet with data augmentation
 |                 |    CUB   |    CUB   |mini-ImageNet|mini-ImageNet|
 |-----------------|:--------:|:--------:|:-----------:|:-----------:|
