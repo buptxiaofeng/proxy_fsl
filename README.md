@@ -1,5 +1,6 @@
 # proxynet_fsl
 
+Table:The performance of ProxyNet with data augmentation
 |                 |    CUB   |    CUB   |mini-ImageNet|mini-ImageNet|
 |-----------------|:--------:|:--------:|:-----------:|:-----------:|
 |Embedding Network|  1-shot  |  5-shot  |    1-shot   |    5-shot   |
