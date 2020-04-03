@@ -66,10 +66,7 @@ def train():
     #relation.apply(init_layer)
 
     optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 50, factor = 0.5, min_lr = 0.0001)
-    if parameters["dataset"] == "CUB":
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = 20, factor = 0.2, min_lr = 0.0001)
-
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = int(parameters["patience"]), factor = float(parameter["reduce_factor"]), min_lr = 0.0001)
     ce = nn.CrossEntropyLoss().cuda()
     cudnn.benchmark = True
 
