@@ -4,7 +4,10 @@
         "if_augmentation":"True",
 	"num_epochs":600,
 	"batch_size":1,
+
 	"sgd_lr": 0.1,
+	"patience":"50",
+	"reduce_factor":"0.5",
 
 	"num_way":5,
 	"num_shot":5,
