@@ -1,6 +1,7 @@
 {
 	"model_type":"ResNet18",
 	"dataset":"CUB",
+	"save_best":"False",
         "if_augmentation":"True",
 	"num_epochs":600,
 	"batch_size":1,
