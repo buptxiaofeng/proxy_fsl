@@ -4,7 +4,9 @@ import numpy
 from feat.dataloader.mini_imagenet import MiniImageNet
 from feat.dataloader.samplers import CategoriesSampler
 from torch.utils.data import DataLoader
+from feat.models.relation import Relation
 import torch.nn as nn
+import json
 from tqdm import tqdm
 
 def mean_confidence_interval(data, confidence=0.95):
@@ -49,3 +51,18 @@ def evaluation(parameters, relation, data_loader, mode = "test"):
         m, h = mean_confidence_interval(acc_list)
         print('Test mean accuracy of the model on the', mode, ' :{:.2f} %'.format(m * 100), "interval:", h * 100, "val ce loss:", total_loss / len(data_loader))
     return m, h
+
+if __name__ == "__main__":
+    json_file = open("parameters.json")
+    parameters = json.load(json_file)
+    json_file.close()
+
+    test_set = None
+    if parameters["dataset"] == "CUB":
+    ¦   test_set = CUB(setname = 'test', image_size = image_size)
+    elif parameters["dataset"] == "MiniImageNet":
+    ¦   test_set = MiniImageNet(setname = 'test', image_size = image_size)
+    save_name = str(parameters["model_type"]) + "_" + str(parameters["dataset"]) + "_" + str(parameters["num_shot"]) + "_" + str(parameters["num_way"]) + ".pth"
+    proxynet = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"]).cuda()
+    proxynet.load_state_dict(torch.load(os.path.join("weights", save_name)))
+    evaluation(parameters, proxynet, test_set)
