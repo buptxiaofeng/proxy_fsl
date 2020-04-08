@@ -38,6 +38,9 @@ def train():
     json_file.close()
     os.environ["CUDA_VISIBLE_DEVICES"] = parameters["gpu_id"]
 
+    save_best = json.loads(parameters["save_best"].lower())
+    save_name = str(parameters["model_type"]) + "_" + str(parameters["dataset"]) + "_" + str(parameters["num_shot"]) + "_" + str(parameters["num_way"]) + ".pth"
+
     train_set = None
     val_set = None
     test_set = None
@@ -111,6 +114,8 @@ def train():
                     max_acc = acc
                     test_acc, _, = evaluation(parameters, relation, test_loader, mode="test")
                     max_test_acc = test_acc
+                    if save_best:
+                        torch.save(relation.state_dict(), os.path.join("weights", save_name))
                 print("episode:", epoch * parameters["num_train"] + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
 
         scheduler.step(max_acc)
