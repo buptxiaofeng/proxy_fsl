@@ -12,9 +12,6 @@ ROOT_PATH = osp.abspath(osp.join(THIS_PATH, '..', '..'))
 IMAGE_PATH = osp.join(ROOT_PATH, 'data/cub/images')
 SPLIT_PATH = osp.join(ROOT_PATH, 'data/cub/split')
 
-# This is for the CUB dataset, which does not support the ResNet encoder now
-# It is notable, we assume the cub images are cropped based on the given bounding boxes
-# The concept labels are based on the attribute value, which are for further use (and not used in this work)
 class CUB(Dataset):
 
     def __init__(self, setname, image_size = 84, if_augmentation = False):
