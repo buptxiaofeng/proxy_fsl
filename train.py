@@ -69,7 +69,7 @@ def train():
     #relation.apply(init_layer)
 
     optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = int(parameters["patience"]), factor = float(parameter["reduce_factor"]), min_lr = 0.0001)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = int(parameters["patience"]), factor = float(parameters["reduce_factor"]), min_lr = 0.0001)
     ce = nn.CrossEntropyLoss().cuda()
     cudnn.benchmark = True
 
