@@ -59,9 +59,9 @@ if __name__ == "__main__":
 
     test_set = None
     if parameters["dataset"] == "CUB":
-    ¦   test_set = CUB(setname = 'test', image_size = image_size)
+        test_set = CUB(setname = 'test', image_size = image_size)
     elif parameters["dataset"] == "MiniImageNet":
-    ¦   test_set = MiniImageNet(setname = 'test', image_size = image_size)
+        test_set = MiniImageNet(setname = 'test', image_size = image_size)
     save_name = str(parameters["model_type"]) + "_" + str(parameters["dataset"]) + "_" + str(parameters["num_shot"]) + "_" + str(parameters["num_way"]) + ".pth"
     proxynet = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"]).cuda()
     proxynet.load_state_dict(torch.load(os.path.join("weights", save_name)))
