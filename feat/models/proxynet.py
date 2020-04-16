@@ -183,7 +183,7 @@ class Proxy(nn.Module):
 
         return out.squeeze(1)
 
-class Relation(nn.Module):
+class ProxyNet(nn.Module):
 
     def __init__(self, model_type, num_shot, num_way, num_query, proxy_type, classifier):
         super(Relation, self).__init__()
