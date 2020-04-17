@@ -4,7 +4,7 @@ import numpy
 from feat.dataloader.mini_imagenet import MiniImageNet
 from feat.dataloader.samplers import CategoriesSampler
 from torch.utils.data import DataLoader
-from feat.models.relation import ProxyNet 
+from feat.models.proxynet import ProxyNet 
 import torch.nn as nn
 import json
 from tqdm import tqdm
@@ -16,7 +16,7 @@ def mean_confidence_interval(data, confidence=0.95):
     h = se * scipy.stats.t._ppf((1+confidence)/2., n-1)
     return m, h
 
-def evaluation(parameters, relation, data_loader, mode = "test"):
+def evaluation(parameters, proxynet, data_loader, mode = "test"):
     assert mode == "test" or mode == "val"
     num_total = 0
     if mode == "test":
@@ -27,7 +27,7 @@ def evaluation(parameters, relation, data_loader, mode = "test"):
 
     ce = nn.CrossEntropyLoss().cuda()
 
-    relation.eval()
+    proxynet.eval()
 
     acc_list = []
 
@@ -39,7 +39,7 @@ def evaluation(parameters, relation, data_loader, mode = "test"):
             data = batch.cuda()
             k = parameters["num_way"] * parameters["num_shot"]
             support, query = data[:k], data[k:]
-            relation_score = relation(support, query)
+            relation_score = proxynet(support, query)
             loss = ce(-1 * relation_score, label)
             total_loss += loss.item()
             _, predict_label = torch.min(relation_score, 1)
