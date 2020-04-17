@@ -8,7 +8,7 @@ from feat.dataloader.mini_imagenet import MiniImageNet
 from feat.dataloader.cub import CUB
 from feat.dataloader.samplers import CategoriesSampler
 from torch.utils.data import DataLoader
-from feat.models.relation import Relation
+from feat.models.proxynet import ProxyNet 
 from torch.optim.lr_scheduler import StepLR
 from evaluation import evaluation
 from tqdm import tqdm
@@ -65,10 +65,10 @@ def train():
     test_sampler = CategoriesSampler(test_set.label, n_batch = parameters["num_test"], n_cls = parameters["num_way"], n_per = parameters["num_shot"] + parameters["num_query"])
     test_loader = DataLoader(dataset=test_set, batch_sampler=test_sampler, num_workers=8, pin_memory=True)
 
-    relation = Relation(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"]).cuda()
-    #relation.apply(init_layer)
+    proxynet = ProxyNet(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"]).cuda()
+    #proxynet.apply(init_layer)
 
-    optimizer = torch.optim.SGD(relation.parameters(), lr = parameters["sgd_lr"])
+    optimizer = torch.optim.SGD(proxynet.parameters(), lr = parameters["sgd_lr"])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", patience = int(parameters["patience"]), factor = float(parameters["reduce_factor"]), min_lr = 0.0001)
     ce = nn.CrossEntropyLoss().cuda()
     cudnn.benchmark = True
@@ -84,11 +84,11 @@ def train():
         total_rewards = 0
         total_loss = 0
         for i, batch in enumerate(train_loader, 1):
-            relation.train()
+            proxynet.train()
             data, _ = [_.cuda() for _ in batch]
             p = parameters["num_shot"] * parameters["num_way"]
             support, query = data[:p], data[p:]
-            relation_score = relation(support, query)
+            relation_score = proxynet(support, query)
 
             loss = ce(-1 * relation_score, label) 
             total_loss += loss.item()
@@ -96,7 +96,7 @@ def train():
             rewards = [1 if predict_label[j]==label[j] else 0 for j in range(label.shape[0])]
             total_rewards += numpy.sum(rewards)
             
-            relation.zero_grad()
+            proxynet.zero_grad()
             loss.backward()
             optimizer.step()
 
@@ -109,13 +109,13 @@ def train():
             if parameters["dataset"] == "CUB":
                 threshold = 10000
             if (episode % 100 == 0 and episode > threshold) or episode % 1000 == 0:
-                acc, _ = evaluation(parameters, relation, val_loader, mode="val")
+                acc, _ = evaluation(parameters, proxynet, val_loader, mode="val")
                 if acc > max_acc:
                     max_acc = acc
-                    test_acc, _, = evaluation(parameters, relation, test_loader, mode="test")
+                    test_acc, _, = evaluation(parameters, proxynet, test_loader, mode="test")
                     max_test_acc = test_acc
                     if save_best:
-                        torch.save(relation.state_dict(), os.path.join("weights", save_name))
+                        torch.save(proxynet.state_dict(), os.path.join("weights", save_name))
                 print("episode:", epoch * parameters["num_train"] + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
 
         scheduler.step(max_acc)
