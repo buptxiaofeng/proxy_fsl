@@ -186,7 +186,7 @@ class Proxy(nn.Module):
 class ProxyNet(nn.Module):
 
     def __init__(self, model_type, num_shot, num_way, num_query, proxy_type, classifier):
-        super(Relation, self).__init__()
+        super(ProxyNet, self).__init__()
         self.num_shot = num_shot
         self.num_way = num_way
         self.num_query = num_query
