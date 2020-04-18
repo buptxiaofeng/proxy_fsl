@@ -14,10 +14,10 @@ SPLIT_PATH = osp.join(ROOT_PATH, 'data/miniimagenet/split')
 class MiniImageNet(Dataset):
     """ Usage: 
     """
-    def __init__(self, setname, image_size, if_agumentation = False):
+    def __init__(self, setname, image_size, if_augmentation = False):
 
         # Transformation
-        if setname == 'train' and if_agumentation:
+        if setname == 'train' and if_augmentation:
             self.transform = transforms.Compose([
                 transforms.RandomResizedCrop((image_size, image_size)),
                 ImageJitter(dict(Brightness=0.4, Contrast=0.4, Color=0.4)),
