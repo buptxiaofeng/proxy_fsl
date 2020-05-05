@@ -53,7 +53,7 @@ def train():
         val_set = CUB(setname = 'val', image_size = image_size)
         test_set = CUB(setname = 'test', image_size = image_size)
     elif parameters["dataset"] == "MiniImageNet":
-        train_set = MiniImageNet(setname = "train", image_size = image_size, if_agumentation = json.loads(parameters["if_augmentation"].lower()))
+        train_set = MiniImageNet(setname = "train", image_size = image_size, if_augmentation = json.loads(parameters["if_augmentation"].lower()))
         val_set = MiniImageNet(setname = 'val', image_size = image_size)
         test_set = MiniImageNet(setname = 'test', image_size = image_size)
     else:
