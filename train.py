@@ -33,6 +33,7 @@ def init_layer(L):
         L.bias.data.fill_(0)
 
 def train():
+    wandb.init(project="proxynet_fsl")
     json_file = open("parameters.json")
     parameters = json.load(json_file)
     json_file.close()
@@ -66,6 +67,7 @@ def train():
     test_loader = DataLoader(dataset=test_set, batch_sampler=test_sampler, num_workers=8, pin_memory=True)
 
     proxynet = ProxyNet(model_type = parameters["model_type"], num_shot = parameters["num_shot"], num_way = parameters["num_way"], num_query = parameters["num_query"], proxy_type = parameters["proxy_type"], classifier = parameters["classifier"]).cuda()
+    wandb.watch(proxynet)
     #proxynet.apply(init_layer)
 
     optimizer = torch.optim.SGD(proxynet.parameters(), lr = parameters["sgd_lr"])
@@ -105,7 +107,7 @@ def train():
                 print("episode:", epoch * parameters["num_train"] + i+1,"ce loss", total_loss / float(i + 1))
                 train_accuracy = numpy.sum(total_rewards)/1.0/parameters["num_query"] / parameters["num_way"] / parameters["num_train"]
                 print('Train Accuracy of the model on the train :{:.2f} %'.format(100 * train_accuracy))
-            threshold = 50000
+            threshold = 30000
             if parameters["dataset"] == "CUB":
                 threshold = 10000
             if (episode % 100 == 0 and episode > threshold) or episode % 1000 == 0:
@@ -117,6 +119,7 @@ def train():
                     if save_best:
                         torch.save(proxynet.state_dict(), os.path.join("weights", save_name))
                 print("episode:", epoch * parameters["num_train"] + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
+                wandb.log({"val_acc": acc})
 
         scheduler.step(max_acc)
         print("sgd learning rate:", get_learning_rate(optimizer))
