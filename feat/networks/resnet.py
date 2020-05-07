@@ -62,13 +62,13 @@ class SimpleBlock(nn.Module):
         return out
 
 class ResNet(nn.Module):
-    def __init__(self, block, list_of_num_layers, list_of_out_dims, flatten = True):
+    def __init__(self, block, list_of_num_layers, list_of_out_dims):
         # list_of_num_layers specifies number of layers in each stage
         # list_of_out_dims specifies number of output channel for each stage
         super(ResNet,self).__init__()
         assert len(list_of_num_layers)==4, 'Can have only four stages'
-        conv1 = nn.Conv2d(3, 8, kernel_size=7, stride = 2, padding = 3, bias=False)
-        bn1 = nn.BatchNorm2d(8)
+        conv1 = nn.Conv2d(3, 64, kernel_size=7, stride = 2, padding = 3, bias=False)
+        bn1 = nn.BatchNorm2d(64)
 
         relu = nn.ReLU()
         pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -77,10 +77,10 @@ class ResNet(nn.Module):
 
         trunk = [conv1, bn1, relu, pool1]
 
-        indim = 8
+        indim = 64
         for i in range(4):
             for j in range(list_of_num_layers[i]):
-                half_res = (i>=2) and (j==0)
+                half_res = (i>=1) and (j==0)
                 B = block(indim, list_of_out_dims[i], half_res)
                 trunk.append(B)
                 indim = list_of_out_dims[i]
@@ -92,11 +92,11 @@ class ResNet(nn.Module):
 
         return out
 
-def ResNet10(flatten = False):
-    return ResNet(SimpleBlock, [1,1,1,1], [64, 128, 256, 512], flatten)
+def ResNet10():
+    return ResNet(SimpleBlock, [1,1,1,1], [64, 128, 256, 512])
 
-def ResNet18(flatten = False):
-    return ResNet(SimpleBlock, [2,2,2,2],[64,128,256,512], flatten)
+def ResNet18():
+    return ResNet(SimpleBlock, [2,2,2,2],[64,128,256,512])
 
-def ResNet34(flatten = False):
-    return ResNet(SimpleBlock, [3,4,6,3],[64,128,256,512], flatten)
+def ResNet34():
+    return ResNet(SimpleBlock, [3,4,6,3],[64,128,256,512])
