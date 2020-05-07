@@ -1,0 +1,57 @@
+model_type:
+  desc: The backbone network, it can be ConvNet4, ConvNet6, ResNet10, ResNet18, ResNet34
+  value: "ResNet10"
+dataset:
+  desc: The dataset can be CUB, MiniImageNet
+  value: "MiniImageNet"
+
+num_epochs:
+  desc: Number of epochs to train over
+  value: 1000
+save_best:
+  desc: Save the best model
+  value: True
+if_augmentation:
+  desc: Use augmentation methods
+  value: True 
+batch_size:
+  desc: Batch size
+  value: 1
+sgd_lr:
+  desc: Learning rate of SGD
+  value: 0.1
+patience:
+  desc: patience of optimizer scheduler
+  value: 50
+reduce_fator:
+  desc: reduce rate of optimizer sechduler
+  value: 0.5
+
+num_way:
+  desc: number of way
+  value: 5
+num_shot:
+  desc: number of shot
+  value: 5
+num_query:
+  desc: The number of query samples in a task
+  value: 16
+num_train:
+  desc: The number of train tasks in an epoch
+  value: 100
+num_val:
+  desc: The number of validation tasks
+  value: 600
+num_test:
+   desc: The number of test tasks
+   value: 600
+
+proxy_type:
+   desc: Proxy type can be Proxy, Mean, Sum
+   value: "Proxy" 
+classifier:
+   desc: Classifier can be 3DConv, Euclidean
+   value: "3DConv"
+gpu_id:
+   desc: gpu id
+   value: 1
