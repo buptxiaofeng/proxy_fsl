@@ -3,7 +3,7 @@ model_type:
   value: "ResNet10"
 dataset:
   desc: The dataset can be CUB, MiniImageNet
-  value: "MiniImageNet"
+  value: "CUB"
 
 num_epochs:
   desc: Number of epochs to train over
@@ -23,7 +23,7 @@ sgd_lr:
 patience:
   desc: patience of optimizer scheduler
   value: 50
-reduce_fator:
+reduce_factor:
   desc: reduce rate of optimizer sechduler
   value: 0.5
 
@@ -54,4 +54,4 @@ classifier:
    value: "3DConv"
 gpu_id:
    desc: gpu id
-   value: 1
+   value: "1"
