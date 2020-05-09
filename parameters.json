@@ -1,9 +1,9 @@
 {
 	"model_type":"ResNet18",
-	"dataset":"CUB",
-	"save_best":"False",
+	"dataset":"MiniImageNet",
+	"save_best":"True",
         "if_augmentation":"True",
-	"num_epochs":600,
+	"num_epochs":1000,
 	"batch_size":1,
 
 	"sgd_lr": 0.1,
@@ -19,5 +19,5 @@
 
 	"proxy_type":"Proxy",
 	"classifier":"3DConv",
-	"gpu_id":"0"
+	"gpu_id":"1"
 }
