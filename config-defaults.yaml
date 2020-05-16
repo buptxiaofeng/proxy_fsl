@@ -50,7 +50,7 @@ proxy_type:
    desc: Proxy type can be Proxy, Mean, Sum
    value: "Proxy" 
 classifier:
-   desc: Classifier can be 3DConv, Euclidean
+   desc: Classifier can be 3DConv, Euclidean, FC
    value: "3DConv"
 gpu_id:
    desc: gpu id
