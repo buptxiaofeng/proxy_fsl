@@ -35,7 +35,7 @@ num_shot:
   value: 5
 num_query:
   desc: The number of query samples in a task
-  value: 16
+  value: 15
 num_train:
   desc: The number of train tasks in an epoch
   value: 100
