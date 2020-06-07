@@ -44,16 +44,15 @@ class BidirectionalLSTM(nn.Module):
     
 
 class MatchNet(nn.Module):
-    def __init__(self, args):
+    def __init__(self, use_bilstm, model_type, num_shot, num_way, num_query, temperature = 1):
         super(MatchNet, self).__init__()
-        self.use_bilstm = args.use_bilstm
-        self.args = args # information about Shot and Way
+        self.use_bilstm = use_bilstm
         
-        if args.model_type == 'ConvNet':
-            from feat.networks.convnet import ConvNet
-            self.encoder = ConvNet()
+        if model_type == 'ConvNet4':
+            from feat.networks.convnet import ConvNet4
+            self.encoder = ConvNet4()
             layer_size = 32
-        elif args.model_type == 'ResNet':
+        elif model_type == 'ResNet':
             from feat.networks.resnet import ResNet
             self.encoder = ResNet()
             layer_size = 320
@@ -62,7 +61,7 @@ class MatchNet(nn.Module):
 
         if self.use_bilstm:
             self.bilstm = BidirectionalLSTM(layer_sizes=[layer_size], 
-                batch_size=args.query * args.way, 
+                batch_size=num_query * num_way, 
                 vector_dim=layer_size * 2)
 
     def forward(self, support_set, query_set):
@@ -84,10 +83,10 @@ class MatchNet(nn.Module):
             combined = combined.permute([1,0,2]) # KqN x (KN + 1) x d
         
         # get similarity between support set embeddings and target
-        refined_support, refined_query = combined.split((self.args.shot * self.args.way), 1) # KqN x     
+        refined_support, refined_query = combined.split((self.num_shot * self.num_way), 1) # KqN x     
         
         # compute cos similarity
         refined_support = F.normalize(refined_support, dim = 2) # KqN x KN x d
         # compute inner product, batch inner product
-        logitis = torch.bmm(refined_support, refined_query.permute([0,2,1])) / self.args.temperature # KqN x KN x d * KqN x d x 1
+        logitis = torch.bmm(refined_support, refined_query.permute([0,2,1])) / temperature # KqN x KN x d * KqN x d x 1
         return logitis # KqN x KN x 1
