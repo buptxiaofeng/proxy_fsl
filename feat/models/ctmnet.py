@@ -109,8 +109,7 @@ class CTMNet(nn.Module):
         query = self.encoder(query)
 
         #Concentrator
-        #_input_P = self.concentrator(support)
-        _input_P = support
+        _input_P = self.concentrator(support)
         shape = _input_P.shape
         _input_P = support.reshape(self.num_shot, self.num_way, shape[1] , shape[2] , shape[3])
         _input_P = torch.transpose(_input_P, 0, 1)
