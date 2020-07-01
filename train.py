@@ -116,6 +116,7 @@ def train():
                         torch.save(proxynet.state_dict(), os.path.join("weights", save_name))
                 print("episode:", epoch * wandb.config.num_train + i+1,"max val acc:", max_acc, " max test acc:", max_test_acc)
                 wandb.log({"val_acc": acc})
+                wandb.log({"max_test_acc": max_test_acc})
 
         scheduler.step(max_acc)
         print("sgd learning rate:", get_learning_rate(optimizer))
