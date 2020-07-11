@@ -214,6 +214,10 @@ class ProxyNet(nn.Module):
             from feat.networks.resnet import ResNet34
             self.encoder = ResNet34()
             self.input_channels = 512
+        elif model_type == "WRN28":
+            from feat.networks.wrn28 import Wide_ResNet
+            self.encoder = Wide_ResNet(depth = 28, widen_factor = 10, dropout_rate = 0.5)
+            self.input_channels = 640
         else:
             raise ValueError('')
 
