@@ -1,6 +1,6 @@
 model_type:
-  desc: The backbone network, it can be ConvNet4, ConvNet6, ResNet10, ResNet18, ResNet34
-  value: "ResNet10"
+  desc: The backbone network, it can be ConvNet4, ConvNet6, ResNet10, ResNet18, ResNet34, WRN28
+  value: "WRN28"
 dataset:
   desc: The dataset can be CUB, MiniImageNet
   value: "CUB"
@@ -32,7 +32,7 @@ num_way:
   value: 5
 num_shot:
   desc: number of shot
-  value: 5
+  value: 1
 num_query:
   desc: The number of query samples in a task
   value: 15
@@ -54,4 +54,4 @@ classifier:
    value: "3DConv"
 gpu_id:
    desc: gpu id
-   value: "1"
+   value: "0"
