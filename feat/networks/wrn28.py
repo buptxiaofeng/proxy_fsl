@@ -75,7 +75,9 @@ class Wide_ResNet(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         out = F.relu(self.bn1(out))
-        out = F.avg_pool2d(out, 21)
-        out = out.view(out.size(0), -1)
+        #print(out.shape)
+        #out = F.avg_pool2d(out, 21)
+        #print(out.shape)
+        #out = out.view(out.size(0), -1)
         
         return out
