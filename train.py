@@ -42,7 +42,7 @@ def train():
     val_set = None
     test_set = None
     image_size = 84
-    if "ResNet" in wandb.config.model_type or "WRN28" in wandb.config.model_type:
+    if "ResNet" in wandb.config.model_type: 
         image_size = 224
     if wandb.config.dataset == "CUB":
         train_set = CUB(setname = "train", image_size = image_size, if_augmentation = wandb.config.if_augmentation)
