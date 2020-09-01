@@ -26,3 +26,7 @@ Table:The performance of ProxyNet with data augmentation
 |ResNet-10        |76.79±0.84|88.02±0.52|  58.16±0.87 |  75.27±0.65 |
 |ResNet-18        |76.72±0.90|88.63±0.49|  57.88±0.87 |  75.23±0.66 |
 |ResNet-34        |77.70±0.86|87.05±0.52|  58.54±0.85 |  75.90±0.61 |
+
+
+Reference Code:
+FEAT https://github.com/Sha-Lab/FEAT
